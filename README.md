@@ -1,4 +1,4 @@
-# whitebird
+# whitebird 1.0.0R
 ## A lightweight virtual machine designed for ComputerCraft:Tweaked with modern features.
 
 Registered under GPLv3
