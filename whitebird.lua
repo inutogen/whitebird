@@ -3,7 +3,7 @@
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
 -- minerobber, fixed a minor selection menu bug, fixed a bug that occured from fs.combine
 
-local ver = "1.1.0 RELEASE"
+local ver = "v1.2-release.1"
 
 for i=1,100  do
     print("whitebird")
