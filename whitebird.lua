@@ -1,9 +1,9 @@
 -- yabastar, main dev
--- JackMacWindows, major bug fixes, dbprotect.lua
+-- JackMacWindows, major bug fixes
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
 -- minerobber, fixed a minor selection menu bug
 
-local ver = "1.1.0 RELEASE"
+local ver = "v1.1-release.3"
 
 for i=1,100  do
     print("whitebird")
@@ -356,80 +356,6 @@ _ENV.fs.isDriveRoot = function(path)
             return nil
         end
     end
-end
-
-_ENV.fs.complete = function(sPath, sLocation, bIncludeFiles, bIncludeDirs) -- thanks JMW
-    expect(1, sPath, "string")
-    expect(2, sLocation, "string")
-    local bIncludeHidden = nil
-
-    if type(bIncludeFiles) == "table" then
-        bIncludeDirs = field(bIncludeFiles, "include_dirs", "boolean", "nil")
-        bIncludeHidden = field(bIncludeFiles, "include_hidden", "boolean", "nil")
-        bIncludeFiles = field(bIncludeFiles, "include_files", "boolean", "nil")
-    else
-        expect(3, bIncludeFiles, "boolean", "nil")
-        expect(4, bIncludeDirs, "boolean", "nil")
-    end
-
-    bIncludeHidden = bIncludeHidden ~= false
-    bIncludeFiles = bIncludeFiles ~= false
-    bIncludeDirs = bIncludeDirs ~= false
-    local sDir = sLocation
-    local nStart = 1
-    local nSlash = string.find(sPath, "[/\\]", nStart)
-    if nSlash == 1 then
-        sDir = ""
-        nStart = 2
-    end
-    local sName
-    while not sName do
-        local nSlash = string.find(sPath, "[/\\]", nStart)
-        if nSlash then
-            local sPart = string.sub(sPath, nStart, nSlash - 1)
-            sDir = fs.combine(sDir, sPart)
-            nStart = nSlash + 1
-        else
-            sName = string.sub(sPath, nStart)
-        end
-    end
-
-    if fs.isDir(sDir) then
-        local tResults = {}
-        if bIncludeDirs and sPath == "" then
-            table.insert(tResults, ".")
-        end
-        if sDir ~= "" then
-            if sPath == "" then
-                table.insert(tResults, bIncludeDirs and ".." or "../")
-            elseif sPath == "." then
-                table.insert(tResults, bIncludeDirs and "." or "./")
-            end
-        end
-        local tFiles = fs.list(sDir)
-        for n = 1, #tFiles do
-            local sFile = tFiles[n]
-            if #sFile >= #sName and string.sub(sFile, 1, #sName) == sName and (
-                bIncludeHidden or sFile:sub(1, 1) ~= "." or sName:sub(1, 1) == "."
-            ) then
-                local bIsDir = fs.isDir(fs.combine(sDir, sFile))
-                local sResult = string.sub(sFile, #sName + 1)
-                if bIsDir then
-                    table.insert(tResults, sResult .. "/")
-                    if bIncludeDirs and #sResult > 0 then
-                        table.insert(tResults, sResult)
-                    end
-                else
-                    if bIncludeFiles and #sResult > 0 then
-                        table.insert(tResults, sResult)
-                    end
-                end
-            end
-        end
-        return tResults
-    end
-
-    return {}
 end
 
 _ENV.fs.exists = function(path)
