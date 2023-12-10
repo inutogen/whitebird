@@ -1,7 +1,7 @@
 -- yabastar, main dev
 -- JackMacWindows, major bug fixes
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
--- minerobber, fixed a minor selection menu bug
+-- minerobber, fixed a minor selection menu bug, fixed a bug that occured from fs.combine
 
 local ver = "1.1.0 RELEASE"
 
@@ -594,6 +594,6 @@ clear()
 term.setTextColor(colors.yellow)
 print("whitebird VM")
 print(ver)
-os.run(_ENV, "rom/programs/shell.lua")
+os.run({}, "rom/programs/shell.lua")
 
 _G.fs = oldfs
