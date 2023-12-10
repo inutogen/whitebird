@@ -3,7 +3,7 @@
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
 -- minerobber, fixed a minor selection menu bug
 
-local ver = "v1.1-release.3"
+local ver = "1.1.0 RELEASE"
 
 for i=1,100  do
     print("whitebird")
@@ -107,8 +107,7 @@ end
 clear()
 
 local expect = require "cc.expect"
-local field = expect.field
-
+local fs_combine = fs.combine
 local oldfs = fs
 _G.fs = {}
 for k, v in pairs(oldfs) do fs[k] = v end
@@ -118,8 +117,8 @@ local function isVM(path)
 end
 
 _ENV.fs.open = function(path, mode)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.open(cleanRawPath, mode)
@@ -133,8 +132,8 @@ _ENV.fs.open = function(path, mode)
 end
 
 _ENV.fs.list = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,3) == "rom" then
         return oldfs.list(cleanRawPath)
@@ -154,8 +153,8 @@ _ENV.fs.list = function(path)
 end
 
 _ENV.fs.find = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.find(cleanRawPath)
     else
@@ -172,8 +171,8 @@ _ENV.fs.find = function(path)
 end
 
 _ENV.fs.isDir = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.isDir(cleanRawPath)
@@ -191,9 +190,9 @@ _ENV.fs.isDir = function(path)
 end
 
 _ENV.fs.copy = function(path,dest)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanDest = fs.combine("virtualmachines/"..virfold, dest)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanDest = fs_combine("virtualmachines/"..virfold, dest)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.copy(cleanRawPath,cleanDest)
@@ -207,8 +206,8 @@ _ENV.fs.copy = function(path,dest)
 end
 
 _ENV.fs.delete = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         print(cleanRawPath)
@@ -223,8 +222,8 @@ _ENV.fs.delete = function(path)
 end
 
 _ENV.fs.attributes = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.attributes(cleanRawPath)
@@ -238,8 +237,8 @@ _ENV.fs.attributes = function(path)
 end
 
 _ENV.fs.getCapacity = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.getCapacity(cleanRawPath)
@@ -253,8 +252,8 @@ _ENV.fs.getCapacity = function(path)
 end
 
 _ENV.fs.getFreeSpace = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.getFreeSpace(cleanRawPath)
@@ -268,8 +267,8 @@ _ENV.fs.getFreeSpace = function(path)
 end
 
 _ENV.fs.getDrive = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.getDrive(cleanRawPath)
@@ -283,9 +282,9 @@ _ENV.fs.getDrive = function(path)
 end
 
 _ENV.fs.move = function(path,dest)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanDest = fs.combine("virtualmachines/"..virfold, dest)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanDest = fs_combine("virtualmachines/"..virfold, dest)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.move(cleanRawPath,cleanDest)
@@ -299,8 +298,8 @@ _ENV.fs.move = function(path,dest)
 end
 
 _ENV.fs.makeDir = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.makeDir(cleanRawPath)
@@ -314,8 +313,8 @@ _ENV.fs.makeDir = function(path)
 end
 
 _ENV.fs.isReadOnly = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.isReadOnly(cleanRawPath)
@@ -329,8 +328,8 @@ _ENV.fs.isReadOnly = function(path)
 end
 
 _ENV.fs.getSize = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.getSize(cleanRawPath)
@@ -344,8 +343,8 @@ _ENV.fs.getSize = function(path)
 end
 
 _ENV.fs.isDriveRoot = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
 
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.isDriveRoot(cleanRawPath)
@@ -359,8 +358,8 @@ _ENV.fs.isDriveRoot = function(path)
 end
 
 _ENV.fs.exists = function(path)
-    local cleanPath = fs.combine("virtualmachines/"..virfold, path)
-    local cleanRawPath = fs.combine(path)
+    local cleanPath = fs_combine("virtualmachines/"..virfold, path)
+    local cleanRawPath = fs_combine(path)
     if starts(cleanRawPath,4) == "rom/" then
         return oldfs.exists(cleanRawPath)
     else
