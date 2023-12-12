@@ -3,7 +3,7 @@
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
 -- minerobber, fixed a minor selection menu bug, fixed a bug that occured from fs.combine
 
-local ver = "v2.0-release.1"
+local ver = "v2.0-release.2"
 
 local expect = require "cc.expect".expect
 
