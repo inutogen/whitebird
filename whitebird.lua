@@ -924,8 +924,8 @@ PrimeUI.clear()
 local fs_combine = fs.combine
 local oldfs = fs
 local oldos = os
-_ENV.fs = {}
-_ENV.os = {}
+_G.fs = {}
+_G.os = {}
 for k, v in pairs(oldfs) do fs[k] = v end
 for k, v in pairs(oldos) do os[k] = v end
 
