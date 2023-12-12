@@ -785,20 +785,20 @@ end
 
 mainUI = function()
 PrimeUI.clear()
-PrimeUI.label(term.current(), 3, 2, "whitebird VM")
-PrimeUI.horizontalLine(term.current(), 3, 3, #("whitebird VM") + 2)
+PrimeUI.label(term.current(), 3, 2, "seagull container")
+PrimeUI.horizontalLine(term.current(), 3, 3, #("seagull container") + 2)
 local entries2 = {
-    "Create new VM",
-    "Launch VM",
+    "Create new container",
+    "Launch container",
     "Config menu",
-    "Delete VM"
+    "Delete container"
 }
 
 local entries2_descriptions = {
-    "Create a new VM",
-    "Load into a VM",
+    "Create a new container",
+    "Load into a container",
     "Open the configuration menu",
-    "Delete a VM"
+    "Delete a container"
 }
 
 local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, entries2_descriptions[1])
@@ -810,7 +810,7 @@ PrimeUI.clear()
 
 clear()
 
-if selection == "Create new VM" then
+if selection == "Create new container" then
 	PrimeUI.label(term.current(), 3, 5, "Enter VM name")
 	PrimeUI.borderBox(term.current(), 4, 7, 40, 1)
 	PrimeUI.inputBox(term.current(), 4, 7, 40, "result")
@@ -824,14 +824,18 @@ if selection == "Create new VM" then
 	else
 		PrimeUI.clear()
 		clear()
+        PrimeUI.label(term.current(), 3, 5, "File to launch")
+        PrimeUI.borderBox(term.current(), 4, 7, 40, 1)
+        PrimeUI.inputBox(term.current(), 4, 7, 40, "result")
+        local _, _, filelaunch = PrimeUI.run()
 		fs.makeDir("virtualmachines/"..text)
         fs.makeDir("virtualconfig/"..text)
         local startconfig = fs.open("virtualconfig/"..text.."/config.lua","w")
-        startconfig.write("textnewID=1")
+        startconfig.write("filelaunch=".."\""..filelaunch.."\"")
         startconfig.close()
 	end
     mainUI()
-elseif selection == "Launch VM" then
+elseif selection == "Launch container" then
     vms = fs.list("/virtualmachines")
     local vmname = {}
     for _,v in ipairs(vms) do
@@ -840,7 +844,7 @@ elseif selection == "Launch VM" then
 
     local vmdesc = {}
     for _,_ in ipairs(vmname) do
-        table.insert(vmdesc,1,"Load VM")
+        table.insert(vmdesc,1,"Load container")
     end
 
     local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
@@ -858,7 +862,7 @@ elseif selection == "Config menu" then
 
     local vmdesc = {}
     for _,_ in ipairs(vmname) do
-        table.insert(vmdesc,1,"Config VM")
+        table.insert(vmdesc,1,"Config container")
     end
 
     local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
@@ -867,11 +871,13 @@ elseif selection == "Config menu" then
     local _, _, selection = PrimeUI.run()
 
     local configname = {
-        "Edit ID"
+        "Edit ID",
+        "Edit launchfile"
     }
 
     local configdesc = {
-        "Edit the computer's ID"
+        "Edit the computer's ID",
+        "Change the launchfile"
     }
     
     PrimeUI.clear()
@@ -888,14 +894,25 @@ elseif selection == "Config menu" then
 	    local _, _, textnewID = PrimeUI.run()
 
         _G.textnewID = tonumber(textnewID)
+    else
+        PrimeUI.clear()
+	    PrimeUI.label(term.current(), 3, 5, "Enter a new launchfile path")
+	    PrimeUI.borderBox(term.current(), 4, 7, 40, 1)
+	    PrimeUI.inputBox(term.current(), 4, 7, 40, "result")
+	    local _, _, textnewlf = PrimeUI.run()
+        _G.filelaunch = textnewlf
     end
-
-    local configdata = fs.open("virtaulconfig/"..selection.."/config.lua", "w")
-    configdata.write("textnewID="..textnewID)
+    dofile("virtualconfig/"..selection.."/config.lua")
+    if textnewID == nil then
+        textnewID = 1
+    end
+    local configdata = fs.open("virtualconfig/"..selection.."/config.lua", "w")
+    configdata.write("textnewID="..textnewID.."\n")
+    configdata.write("filelaunch=".."\""..filelaunch.."\"")
     configdata.close()
     dofile("virtualconfig/"..selection.."/config.lua")
     mainUI()
-elseif selection == "Delete VM" then
+elseif selection == "Delete container" then
     vms = fs.list("/virtualmachines")
     local vmname = {}
     for _,v in ipairs(vms) do
@@ -904,7 +921,7 @@ elseif selection == "Delete VM" then
 
     local vmdesc = {}
     for _,_ in ipairs(vmname) do
-        table.insert(vmdesc,1,"Config VM")
+        table.insert(vmdesc,1,"Delete the container")
     end
 
     local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
@@ -1414,13 +1431,32 @@ for functionName, func in pairs(fs) do
     end
 end
 
+function customDofile(filename)
+    local file = oldfs.open(filename, "r")
+    if not file then
+        return error("File not found: " .. filename)
+    end
+ 
+    local content = file.readAll()
+    file.close()
+ 
+    local func, err = load(content, "=" .. filename, "t", _ENV)
+    if not func then
+        return error("Error loading file: " .. err)
+    end
+ 
+    return func()
+end
+
 sleep(2)
 
 clear()
 
 term.setTextColor(colors.yellow)
-print("whitebird VM")
+print("seagull container")
 print(ver)
-os.run({}, "rom/programs/shell.lua")
+term.setTextColor(colors.white)
+customDofile(filelaunch)
 
+print("Program finished, booting back into root")
 _G.fs = oldfs
