@@ -3,7 +3,7 @@
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
 -- minerobber, fixed a minor selection menu bug, fixed a bug that occured from fs.combine
 
-local ver = "v1.2-release.1"
+local ver = "v2.0-release.1"
 
 local expect = require "cc.expect".expect
 
@@ -783,24 +783,23 @@ else
     vms = fs.list("/virtualmachines")
 end
 
+mainUI = function()
 PrimeUI.clear()
 PrimeUI.label(term.current(), 3, 2, "whitebird VM")
 PrimeUI.horizontalLine(term.current(), 3, 3, #("whitebird VM") + 2)
 local entries2 = {
-    "Create new VM"
+    "Create new VM",
+    "Launch VM",
+    "Config menu",
+    "Delete VM"
 }
-
-for _,v in ipairs(vms) do
-    table.insert(entries2,2,v)
-end
 
 local entries2_descriptions = {
-    "Create new VM"
+    "Create a new VM",
+    "Load into a VM",
+    "Open the configuration menu",
+    "Delete a VM"
 }
-
-for _,_ in ipairs(entries2) do
-    table.insert(entries2_descriptions,2,"Load VM")
-end
 
 local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, entries2_descriptions[1])
 PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
@@ -826,20 +825,116 @@ if selection == "Create new VM" then
 		PrimeUI.clear()
 		clear()
 		fs.makeDir("virtualmachines/"..text)
-		virfold = text
+        fs.makeDir("virtualconfig/"..text)
+        local startconfig = fs.open("virtualconfig/"..text.."/config.lua","w")
+        startconfig.write("textnewID=1")
+        startconfig.close()
 	end
-else
-	virfold = selection
-end
+    mainUI()
+elseif selection == "Launch VM" then
+    vms = fs.list("/virtualmachines")
+    local vmname = {}
+    for _,v in ipairs(vms) do
+        table.insert(vmname,1,v)
+    end
 
-sleep(5)
+    local vmdesc = {}
+    for _,_ in ipairs(vmname) do
+        table.insert(vmdesc,1,"Load VM")
+    end
+
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
+    local _, _, selection = PrimeUI.run()
+    dofile("virtualconfig/"..selection.."/config.lua")
+    virfold = selection
+elseif selection == "Config menu" then
+    vms = fs.list("/virtualmachines")
+    local vmname = {}
+    for _,v in ipairs(vms) do
+        table.insert(vmname,1,v)
+    end
+
+    local vmdesc = {}
+    for _,_ in ipairs(vmname) do
+        table.insert(vmdesc,1,"Config VM")
+    end
+
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
+    local _, _, selection = PrimeUI.run()
+
+    local configname = {
+        "Edit ID"
+    }
+
+    local configdesc = {
+        "Edit the computer's ID"
+    }
+    
+    PrimeUI.clear()
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, configdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, configname, "done", function(option) redraw(configdesc[option]) end)
+    local _, _, selection2 = PrimeUI.run()
+
+    if selection2 == "Edit ID" then
+        PrimeUI.clear()
+	    PrimeUI.label(term.current(), 3, 5, "Enter a new ID (number)")
+	    PrimeUI.borderBox(term.current(), 4, 7, 40, 1)
+	    PrimeUI.inputBox(term.current(), 4, 7, 40, "result")
+	    local _, _, textnewID = PrimeUI.run()
+
+        _G.textnewID = tonumber(textnewID)
+    end
+
+    local configdata = fs.open("virtaulconfig/"..selection.."/config.lua", "w")
+    configdata.write("textnewID="..textnewID)
+    configdata.close()
+    dofile("virtualconfig/"..selection.."/config.lua")
+    mainUI()
+elseif selection == "Delete VM" then
+    vms = fs.list("/virtualmachines")
+    local vmname = {}
+    for _,v in ipairs(vms) do
+        table.insert(vmname,1,v)
+    end
+
+    local vmdesc = {}
+    for _,_ in ipairs(vmname) do
+        table.insert(vmdesc,1,"Config VM")
+    end
+
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
+    local _, _, selection = PrimeUI.run()
+
+    fs.delete("virtualmachines/"..selection)
+    fs.delete("virtualconfig/"..selection)
+    mainUI()
+end
+end
+mainUI()
+
+PrimeUI.clear()
+
 local fs_combine = fs.combine
 local oldfs = fs
-_G.fs = {}
+local oldos = os
+_ENV.fs = {}
+_ENV.os = {}
 for k, v in pairs(oldfs) do fs[k] = v end
+for k, v in pairs(oldos) do os[k] = v end
 
 local function isVM(path)
     return string.find(path, "^virtualmachines/"..virfold) == 1
+end
+
+_ENV.os.getComputerID = function()
+    return textnewID
 end
 
 _ENV.fs.open = function(path, mode)
@@ -1012,14 +1107,20 @@ _ENV.fs.move = function(path,dest)
     local cleanDest = fs_combine("virtualmachines/"..virfold, dest)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
-        return oldfs.move(cleanRawPath,cleanDest)
-    else
-        if isVM(cleanPath) == true then
-            return oldfs.move(cleanPath, cleanDest)
+    if isVM(cleanPath) == true then
+        if isVM(cleanDest) == true then
+            oldfs.move(cleanPath,cleanDest)
         else
             return nil
         end
+    elseif cleanRawPath == "rom/" then
+        if isVM(cleanDest) then
+            return oldfs.move(cleanRawPath,cleanDest)
+        else
+            return nil
+        end
+    else
+        return nil
     end
 end
 
