@@ -890,7 +890,7 @@ elseif selection == "Config menu" then
         _G.textnewID = tonumber(textnewID)
     end
 
-    local configdata = fs.open("virtaulconfig/"..selection.."/config.lua", "w")
+    local configdata = fs.open("virtualconfig/"..selection.."/config.lua", "w")
     configdata.write("textnewID="..textnewID)
     configdata.close()
     dofile("virtualconfig/"..selection.."/config.lua")
