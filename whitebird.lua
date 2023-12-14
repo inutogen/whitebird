@@ -950,23 +950,25 @@ mainUI()
 
 PrimeUI.clear()
 
+G = {}
 local fs_combine = fs.combine
 local oldfs = fs
 local oldos = os
-_G.fs = {}
-_G.os = {}
+G.fs = {}
+G.os = {}
 for k, v in pairs(oldfs) do fs[k] = v end
 for k, v in pairs(oldos) do os[k] = v end
+for k, v in pairs(G) do _G[k] = v end
 
 local function isVM(path)
     return string.find(path, "^virtualmachines/"..virfold) == 1
 end
 
-_ENV.os.getComputerID = function()
+G.os.getComputerID = function()
     return textnewID
 end
 
-_ENV.fs.open = function(path, mode)
+G.fs.open = function(path, mode)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -981,7 +983,7 @@ _ENV.fs.open = function(path, mode)
     end
 end
 
-_ENV.fs.list = function(path)
+G.fs.list = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1002,7 +1004,7 @@ _ENV.fs.list = function(path)
     end
 end
 
-_ENV.fs.find = function(path)
+G.fs.find = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
     if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
@@ -1020,7 +1022,7 @@ _ENV.fs.find = function(path)
     end
 end
 
-_ENV.fs.isDir = function(path)
+G.fs.isDir = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1039,7 +1041,7 @@ _ENV.fs.isDir = function(path)
     end
 end
 
-_ENV.fs.copy = function(path,dest)
+G.fs.copy = function(path,dest)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanDest = fs_combine("virtualmachines/"..virfold, dest)
     local cleanRawPath = fs_combine(path)
@@ -1055,7 +1057,7 @@ _ENV.fs.copy = function(path,dest)
     end
 end
 
-_ENV.fs.delete = function(path)
+G.fs.delete = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1071,7 +1073,7 @@ _ENV.fs.delete = function(path)
     end
 end
 
-_ENV.fs.attributes = function(path)
+G.fs.attributes = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1086,7 +1088,7 @@ _ENV.fs.attributes = function(path)
     end
 end
 
-_ENV.fs.getCapacity = function(path)
+G.fs.getCapacity = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1101,7 +1103,7 @@ _ENV.fs.getCapacity = function(path)
     end
 end
 
-_ENV.fs.getFreeSpace = function(path)
+G.fs.getFreeSpace = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1116,7 +1118,7 @@ _ENV.fs.getFreeSpace = function(path)
     end
 end
 
-_ENV.fs.getDrive = function(path)
+G.fs.getDrive = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1131,7 +1133,7 @@ _ENV.fs.getDrive = function(path)
     end
 end
 
-_ENV.fs.move = function(path,dest)
+G.fs.move = function(path,dest)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanDest = fs_combine("virtualmachines/"..virfold, dest)
     local cleanRawPath = fs_combine(path)
@@ -1153,7 +1155,7 @@ _ENV.fs.move = function(path,dest)
     end
 end
 
-_ENV.fs.makeDir = function(path)
+G.fs.makeDir = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1168,7 +1170,7 @@ _ENV.fs.makeDir = function(path)
     end
 end
 
-_ENV.fs.isReadOnly = function(path)
+G.fs.isReadOnly = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1183,7 +1185,7 @@ _ENV.fs.isReadOnly = function(path)
     end
 end
 
-_ENV.fs.getSize = function(path)
+G.fs.getSize = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1198,7 +1200,7 @@ _ENV.fs.getSize = function(path)
     end
 end
 
-_ENV.fs.isDriveRoot = function(path)
+G.fs.isDriveRoot = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
@@ -1213,7 +1215,7 @@ _ENV.fs.isDriveRoot = function(path)
     end
 end
 
-_ENV.fs.exists = function(path)
+G(...).fs.exists = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
     if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
@@ -1450,6 +1452,18 @@ clear()
 term.setTextColor(colors.yellow)
 print("whitebird VM")
 print(ver)
-os.run({}, "rom/programs/shell.lua")
-
-_G.fs = oldfs
+path = "bios.lua"
+local env = G -- set the environment to use
+local fn = assert(loadfile(path, nil, env)) -- load the program
+local coro = coroutine.create(fn) -- create a coroutine for the function
+while true do -- loop forever
+    local ok, filter = coroutine.resume(coro) -- resume (run) the coroutine with all the arguments
+    if not ok then -- if the call failed...
+        error(filter, 0) -- ...throw an error with the message (filter contains the message)
+    end
+    if coroutine.status(coro) == "dead" then -- if the coroutine is no longer running (it returned)...
+        return -- ...exit
+    end
+    args = table.pack(coroutine.yield(filter)) -- yield using the results from the coroutine, and pack whatever comes back into the argument table
+    -- note: coroutine.yield() waits for an event, and then returns the event name + arguments
+end
