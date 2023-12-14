@@ -1,10 +1,9 @@
 -- yabastar, main dev
--- JackMacWindows, major bug fixes, PrimeUI
+-- JackMacWindows, major bug fixes, PrimeUI, dbprotect
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
 -- minerobber, fixed a minor selection menu bug, fixed a bug that occured from fs.combine
 
-local ver = "v1.2-release.1"
-
+local ver = "v2.2-release.1"
 local expect = require "cc.expect".expect
 
 --PrimeUI by JMW
@@ -602,6 +601,11 @@ function PrimeUI.selectionBox(win, x, y, width, height, entries, action, selectC
     expect(8, selectChangeAction, "function", "string", "nil")
     fgColor = expect(9, fgColor, "number", "nil") or colors.white
     bgColor = expect(10, bgColor, "number", "nil") or colors.black
+    -- Check that all entries are strings.
+    if #entries == 0 then error("bad argument #6 (table must not be empty)", 2) end
+    for i, v in ipairs(entries) do
+        if type(v) ~= "string" then error("bad item " .. i .. " in entries table (expected string, got " .. type(v), 2) end
+    end
     -- Create container window.
     local entrywin = window.create(win, x, y, width - 1, height)
     local selection, scroll = 1, 1
@@ -627,7 +631,7 @@ function PrimeUI.selectionBox(win, x, y, width, height, entries, action, selectC
             end
             -- Draw the selection.
             entrywin.clearLine()
-            entrywin.write(tonumber(e) > (tonumber(width)) - 1 and e:sub(1, width - 4) .. "..." or e)
+            entrywin.write(#e > width - 1 and e:sub(1, width - 4) .. "..." or e)
         end
         -- Draw scroll arrows.
         entrywin.setCursorPos(width, 1)
@@ -778,24 +782,23 @@ else
     vms = fs.list("/virtualmachines")
 end
 
+mainUI = function()
 PrimeUI.clear()
 PrimeUI.label(term.current(), 3, 2, "whitebird VM")
 PrimeUI.horizontalLine(term.current(), 3, 3, #("whitebird VM") + 2)
 local entries2 = {
-    "Create new VM"
+    "Create new VM",
+    "Launch VM",
+    "Config menu",
+    "Delete VM"
 }
-
-for k,_ in ipairs(vms) do
-    table.insert(entries2,2,k)
-end
 
 local entries2_descriptions = {
-    "Create new VM"
+    "Create a new VM",
+    "Load into a VM",
+    "Open the configuration menu",
+    "Delete a VM"
 }
-
-for _,_ in ipairs(entries2) do
-    table.insert(entries2_descriptions,2,"Load VM")
-end
 
 local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, entries2_descriptions[1])
 PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
@@ -806,22 +809,168 @@ PrimeUI.clear()
 
 clear()
 
-print(selection)
-sleep(5)
+if selection == "Create new VM" then
+	PrimeUI.label(term.current(), 3, 5, "Enter VM name")
+	PrimeUI.borderBox(term.current(), 4, 7, 40, 1)
+	PrimeUI.inputBox(term.current(), 4, 7, 40, "result")
+	local _, _, text = PrimeUI.run()
+	if fs.exists("virtualmachines/"..text) then
+		PrimeUI.clear()
+		clear()
+		print("VM with same name was already found. Rebooting")
+		sleep(2)
+		os.reboot()
+	else
+		PrimeUI.clear()
+		clear()
+		fs.makeDir("virtualmachines/"..text)
+        fs.makeDir("virtualconfig/"..text)
+        local startconfig = fs.open("virtualconfig/"..text.."/config.lua","w")
+        startconfig.write("textnewID=1")
+        startconfig.close()
+        PrimeUI.clear()
+        clear()
+        local entrynames = {
+            "CraftOS",
+            "Level OS",
+            "Phile OS"
+        }
+        local entrydescs = {
+            "Build the version of CraftOS on your computer",
+            "Build the latest Level OS",
+            "Build the latest Phile OS"
+        }
+        local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, entrydescs[1])
+        PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+        PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, entrynames, "done", function(option) redraw(entrydescs[option]) end)
+        local _, _, selection = PrimeUI.run()
+        OSname = selection
+        if selection == "Phile OS" then
+            local request = http.get("https://raw.githubusercontent.com/Ryans-MC-Computer-Mods-Projects/POS/main/Install.lua")
+            writetodata = fs.open("virtualmachines/"..text.."/startup.lua", "w")
+            writetodata.write(request.readAll())
+            writetodata.close()
+            request.close()
+        elseif selection == "Level OS" then
+            local request = http.get("https://install.leveloper.cc/")
+            writetodata = fs.open("virtualmachines/"..text.."/startup.lua", "w")
+            writetodata.write(request.readAll())
+            writetodata.close()
+            request.close()
+        end
+	end
+    mainUI()
+elseif selection == "Launch VM" then
+    vms = fs.list("/virtualmachines")
+    local vmname = {}
+    for _,v in ipairs(vms) do
+        table.insert(vmname,1,v)
+    end
+
+    local vmdesc = {}
+    for _,_ in ipairs(vmname) do
+        table.insert(vmdesc,1,"Load VM")
+    end
+
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
+    local _, _, selection = PrimeUI.run()
+    dofile("virtualconfig/"..selection.."/config.lua")
+    virfold = selection
+elseif selection == "Config menu" then
+    vms = fs.list("/virtualmachines")
+    local vmname = {}
+    for _,v in ipairs(vms) do
+        table.insert(vmname,1,v)
+    end
+
+    local vmdesc = {}
+    for _,_ in ipairs(vmname) do
+        table.insert(vmdesc,1,"Config VM")
+    end
+
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
+    local _, _, selection = PrimeUI.run()
+
+    local configname = {
+        "Edit ID"
+    }
+
+    local configdesc = {
+        "Edit the computer's ID"
+    }
+    
+    PrimeUI.clear()
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, configdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, configname, "done", function(option) redraw(configdesc[option]) end)
+    local _, _, selection2 = PrimeUI.run()
+
+    if selection2 == "Edit ID" then
+        PrimeUI.clear()
+	    PrimeUI.label(term.current(), 3, 5, "Enter a new ID (number)")
+	    PrimeUI.borderBox(term.current(), 4, 7, 40, 1)
+	    PrimeUI.inputBox(term.current(), 4, 7, 40, "result")
+	    local _, _, textnewID = PrimeUI.run()
+
+        _G.textnewID = tonumber(textnewID)
+    end
+
+    local configdata = fs.open("virtualconfig/"..selection.."/config.lua", "w")
+    configdata.write("textnewID="..textnewID)
+    configdata.close()
+    dofile("virtualconfig/"..selection.."/config.lua")
+    mainUI()
+elseif selection == "Delete VM" then
+    vms = fs.list("/virtualmachines")
+    local vmname = {}
+    for _,v in ipairs(vms) do
+        table.insert(vmname,1,v)
+    end
+
+    local vmdesc = {}
+    for _,_ in ipairs(vmname) do
+        table.insert(vmdesc,1,"Config VM")
+    end
+
+    local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
+    PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
+    PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
+    local _, _, selection = PrimeUI.run()
+
+    fs.delete("virtualmachines/"..selection)
+    fs.delete("virtualconfig/"..selection)
+    mainUI()
+end
+end
+mainUI()
+
+PrimeUI.clear()
+
 local fs_combine = fs.combine
 local oldfs = fs
+local oldos = os
 _G.fs = {}
+_G.os = {}
 for k, v in pairs(oldfs) do fs[k] = v end
+for k, v in pairs(oldos) do os[k] = v end
 
 local function isVM(path)
     return string.find(path, "^virtualmachines/"..virfold) == 1
+end
+
+_ENV.os.getComputerID = function()
+    return textnewID
 end
 
 _ENV.fs.open = function(path, mode)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.open(cleanRawPath, mode)
     else
         if isVM(cleanPath) == true then
@@ -836,7 +985,7 @@ _ENV.fs.list = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,3) == "rom" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.list(cleanRawPath)
     else
         if cleanRawPath == "" then
@@ -856,7 +1005,7 @@ end
 _ENV.fs.find = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.find(cleanRawPath)
     else
         local foundFiles = oldfs.find(cleanPath)
@@ -875,7 +1024,7 @@ _ENV.fs.isDir = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.isDir(cleanRawPath)
     else
         if cleanRawPath == "rom" then
@@ -895,7 +1044,7 @@ _ENV.fs.copy = function(path,dest)
     local cleanDest = fs_combine("virtualmachines/"..virfold, dest)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.copy(cleanRawPath,cleanDest)
     else
         if isVM(cleanPath) == true then
@@ -910,7 +1059,7 @@ _ENV.fs.delete = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         print(cleanRawPath)
         return oldfs.delete(cleanRawPath)
     else
@@ -926,7 +1075,7 @@ _ENV.fs.attributes = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.attributes(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -941,7 +1090,7 @@ _ENV.fs.getCapacity = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.getCapacity(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -956,7 +1105,7 @@ _ENV.fs.getFreeSpace = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.getFreeSpace(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -971,7 +1120,7 @@ _ENV.fs.getDrive = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.getDrive(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -987,14 +1136,20 @@ _ENV.fs.move = function(path,dest)
     local cleanDest = fs_combine("virtualmachines/"..virfold, dest)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
-        return oldfs.move(cleanRawPath,cleanDest)
-    else
-        if isVM(cleanPath) == true then
-            return oldfs.move(cleanPath, cleanDest)
+    if isVM(cleanPath) == true then
+        if isVM(cleanDest) == true then
+            oldfs.move(cleanPath,cleanDest)
         else
             return nil
         end
+    elseif cleanRawPath == "rom/" then
+        if isVM(cleanDest) then
+            return oldfs.move(cleanRawPath,cleanDest)
+        else
+            return nil
+        end
+    else
+        return nil
     end
 end
 
@@ -1002,7 +1157,7 @@ _ENV.fs.makeDir = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.makeDir(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -1017,7 +1172,7 @@ _ENV.fs.isReadOnly = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.isReadOnly(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -1032,7 +1187,7 @@ _ENV.fs.getSize = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.getSize(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -1047,7 +1202,7 @@ _ENV.fs.isDriveRoot = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
 
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.isDriveRoot(cleanRawPath)
     else
         if isVM(cleanPath) == true then
@@ -1061,7 +1216,7 @@ end
 _ENV.fs.exists = function(path)
     local cleanPath = fs_combine("virtualmachines/"..virfold, path)
     local cleanRawPath = fs_combine(path)
-    if starts(cleanRawPath,4) == "rom/" then
+    if starts(cleanRawPath,4) == "rom/" or cleanRawPath == "rom" then
         return oldfs.exists(cleanRawPath)
     else
         return oldfs.exists(cleanPath)
